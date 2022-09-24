@@ -7,13 +7,14 @@ var http = require("http").createServer(app)
 const io = require("socket.io")(http)
 
 io.on("connection", (socket) => {
+    console.log(`[+] ${socket.id} Conectou-se`)
     socket.on("disconnect", () => {
-        console.log(socket.id + "Se desconectou")
+        console.log(`[-] ${socket.id} Desconectou-se`)
     })
 
      socket.on("msg", (data) => {
         io.emit("showmsg", data)
-        console.log(data)
+        console.table(data)
      })
 })
 

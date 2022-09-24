@@ -4,62 +4,154 @@
 <head>
     <meta charset='utf-8'>
     <meta http-equiv='X-UA-Compatible' content='IE=edge'>
-    <title>Page Title</title>
-    <meta name='viewport' content='width=device-width, initial-scale=1'>
 
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
 </head>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap');
+    body {
+        font-family: 'Roboto Mono', monospace;
+        background-color: #141230;
+        color: white;
+        user-select: none;
+    }
+
+    .chat {
+       
+        height: 78vh;
+  border: solid 3px #c3cbd3;
+  scroll-behavior: auto;
+  border-radius: 6px;
+  margin-bottom: 14px;
+  overflow: auto;
+
+        padding: 16px;
+        margin: 25px;
+       
+        background-color: rgba(0, 0, 0, 0.4);
+    }
+
+    .chatForm {
+        user-select: none;
+
+        position: fixed;
+        width: 100%;
+        left: 0;
+        margin-bottom: 25px;
+        margin: 0;
+        bottom: 0;
+    }
+
+    .systemMsg {
+        color: red;
+    }
+
+    .chatInputs {
+        width: 100%;
+        padding: 8px;
+       font-size: 20px;
+    }
+    
+    .buttonInput {
+
+  
+        color:#141230;
+width: 100%;
+        padding: 16px;
+    font-size: 25px;
+    }
+</style>
 
 <body>
 
-    <h1>Chat Criptografado</h1>
-    <div id="chat">
+    <h1 style="display:none;text-align: center;" id="title">Chat Criptografado</h1>
+    <div class="chat" id="chat">
 
     </div><br>
-    <input type="text" name="" id="msg"><br>
-    <input type="text" name="" id="username" placeholder="Seu nome de usuario">
-    <button onclick="enviar()">Enviar</button>
+    <div class="chatForm">
+        <textarea class="chatInputs" type="text" name="" id="msg" placeholder="Insira a mensagem" onkeydown="if (event.keyCode == 13)
+        document.getElementById('button ').click()"></textarea><br>
 
+        <input class="buttonInput" type="button" name="" onclick="enviar()" id="button" value="Enviar">
+
+    </div>
 </body>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.1/socket.io.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.2/rollups/aes.js"></script>
 <script>
 
-
-    var socket = io("http://localhost:3000")
+    const username = window.prompt("Digite o seu nome de usuario!")
+    const chat = document.getElementById("chat")
 
 
     const queryString = window.location.search;
+    const titleText = document.getElementById("title")
     const urlParams = new URLSearchParams(queryString);
     let chatKey = urlParams.get('chat')
+    document.addEventListener("DOMContentLoaded", function () {
+
+        pageCreate()
+    });
+    var socket = io(`http://localhost:3000?chat=${chatKey}`)
 
 
-    socket.on("showmsg", (data) => {
-        var chat = document.getElementById("chat")
+
+    function pageCreate() {
+
         var p = document.createElement("p");
-        let decryptedMsg = CryptoJS.AES.decrypt(data.msg, chatKey).toString(CryptoJS.enc.Utf8);
-        if (decryptedMsg == false) {
-            return
+        p.classList.add("animate__animated", "animate__fadeInTopBig","animate__faster");
+        p.innerHTML = `<b class="systemMsg">[Sistema]:</b> Bem-vindo ao CryptChat, você se conectou a sala ${chatKey}, como ${username}`
+        chat.append(p)
+        if (chatKey == null || "") {
+            document.title = `Chat Aberto`
+            titleText.innerHTML = `Chat Aberto`
         } else {
-            p.innerText = data.username + ": " + decryptedMsg
-            chat.append(p)
+            document.title = `Chat Criptografado [${chatKey}]`
+            titleText.innerHTML = `Chat  [${chatKey}]`
         }
 
 
+    }
+
+    socket.on("showmsg", (data) => {
+        console.count("[+] Mensagem Recebida")
+
+        var p = document.createElement("p");
+        p.classList.add("animate__animated", "animate__fadeInDown","animate__faster");
+        let decryptedMsg = CryptoJS.AES.decrypt(data.msg, chatKey).toString(CryptoJS.enc.Utf8);
+        if (decryptedMsg == false) {
+
+            return
+        } else {
+
+            p.innerHTML = `<b>[${data.username}]:</b> ${decryptedMsg}`
+
+            chat.append(p)
+            var objDiv = document.getElementById("chat");
+
+objDiv.scrollTop = objDiv.scrollHeight ;
+
+        }
 
     })
     function enviar() {
         let msgField = document.getElementById("msg")
-        let usernameField = document.getElementById("username")
-        if(chatKey == null || ""){
+        var objDiv = document.getElementById("chat");
+
+
+
+        if (chatKey == null || "") {
             chatKey = "default"
         }
         var msg = msgField.value
         let cryptedMsg = CryptoJS.AES.encrypt(msg, chatKey).toString();
 
-        var username = usernameField.value
-        console.log(cryptedMsg)
-
         socket.emit("msg", { msg: cryptedMsg, username: username })
+        console.count("[->] Mensagem Enviada")
+        msgField.value = ""
+        objDiv.scrollTop = objDiv.scrollHeight + 40;
+       
     }
 
 </script>
